@@ -58,7 +58,7 @@ FSMonitor.prototype._measure = function(name) {
   if (this.state !== 'active') {
     throw new Error('Cannot measure if the monitor is not active');
   }
-  var id = this.top.node.id;
+  var id = this.top.id;
 
   if (typeof id !== 'number') {
     throw new Error('EWUT: encountered unexpected node without an id....');
