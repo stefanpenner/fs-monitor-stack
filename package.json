@@ -1,6 +1,6 @@
 {
   "name": "fs-monitor-stack",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "a stack based FS monitor",
   "main": "index.js",
   "scripts": {
