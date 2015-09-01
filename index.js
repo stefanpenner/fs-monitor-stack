@@ -34,7 +34,7 @@ FSMonitor.prototype.push = function(node) {
 FSMonitor.prototype.statsFor = function(node) {
   var id = node.id;
 
-  if (this.stats.length >= id) {
+  if (this.stats.length <= id) {
     return null;
   } else {
     return this.stats[id];
