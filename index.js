@@ -1,5 +1,4 @@
 var fs = require('fs');
-
 module.exports = FSMonitor;
 
 function FSMonitor() {
@@ -46,15 +45,41 @@ FSMonitor.prototype.totalStats = function() {
 
   this.stats.forEach(function(stat) {
     Object.keys(stat).forEach(function(key) {
-      result[key] = (result[key] || 0);
-      result[key] += (stat[key] || 0);
+      var m = result[key] = (result[key] || new Metric());
+      m.count += (stat[key].count);
+      m.time += (stat[key].time);
     });
   });
 
   return result;
 };
 
-FSMonitor.prototype._measure = function(name) {
+function Metric() {
+  this.count = 0;
+  this.time = 0;
+  this.startTime = undefined;
+}
+
+Metric.prototype.start = function() {
+  this.startTime = process.hrtime();
+  this.count++;
+};
+
+Metric.prototype.stop = function() {
+  var now = process.hrtime();
+
+  this.time += (now[0] - this.startTime[0]) * 1e9 + (now[1] - this.startTime[1]);
+  this.startTime = undefined;
+};
+
+Metric.prototype.toJSON = function() {
+  return {
+    count: this.count,
+    time: Mat.round(this.time / 1e4) / 1e2
+  };
+};
+
+FSMonitor.prototype._measure = function(name, original, context, args) {
   if (this.state !== 'active') {
     throw new Error('Cannot measure if the monitor is not active');
   }
@@ -64,8 +89,16 @@ FSMonitor.prototype._measure = function(name) {
     throw new Error('EWUT: encountered unexpected node without an id....');
   }
   var metrics = this.stats[id] = this.stats[id] || Object.create(null);
-  metrics[name] = metrics[name] || 0;
-  metrics[name]++;
+  var m = metrics[name] = metrics[name] || new Metric();
+
+  m.start();
+
+  // TODO: handle async
+  try {
+    return original.apply(context, args);
+  } finally {
+    m.stop();
+  }
 };
 
 FSMonitor.prototype._attach = function() {
@@ -77,9 +110,10 @@ FSMonitor.prototype._attach = function() {
       fs[member] = (function(old, member) {
         return function() {
           if (monitor.shouldMeasure()) {
-            monitor._measure(member);
+            return monitor._measure(member, old, fs, arguments);
+          } else {
+            return old.apply(fs, arguments);
           }
-          return old.apply(fs, arguments);
         };
       }(old, member));
 
