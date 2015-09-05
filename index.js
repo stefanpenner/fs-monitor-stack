@@ -75,7 +75,7 @@ Metric.prototype.stop = function() {
 Metric.prototype.toJSON = function() {
   return {
     count: this.count,
-    time: Mat.round(this.time / 1e4) / 1e2
+    time: Math.round(this.time / 1e4) / 1e2
   };
 };
 
