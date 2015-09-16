@@ -5,6 +5,7 @@ function FSMonitor() {
   this.stack = [];
   this.state = 'idle';
   this.stats = [];
+  this.blacklist = ['createReadStream', 'createWriteStream', 'ReadStream', 'WriteStream'];
 }
 
 
@@ -105,21 +106,23 @@ FSMonitor.prototype._attach = function() {
   var monitor = this;
 
   for (var member in fs) {
-    var old = fs[member];
-    if (typeof old === 'function') {
-      fs[member] = (function(old, member) {
-        return function() {
-          if (monitor.shouldMeasure()) {
-            return monitor._measure(member, old, fs, arguments);
-          } else {
-            return old.apply(fs, arguments);
-          }
-        };
-      }(old, member));
+    if (this.blacklist.indexOf(member) === -1) {
+      var old = fs[member];
+      if (typeof old === 'function') {
+        fs[member] = (function(old, member) {
+          return function() {
+            if (monitor.shouldMeasure()) {
+              return monitor._measure(member, old, fs, arguments);
+            } else {
+              return old.apply(fs, arguments);
+            }
+          };
+        }(old, member));
 
-      fs[member].__restore = function() {
-        fs[member] = old;
-      };
+        fs[member].__restore = function() {
+          fs[member] = old;
+        };
+      }
     }
   }
 };
@@ -155,4 +158,3 @@ Object.defineProperty(FSMonitor.prototype, 'top', {
     return this.stack[this.stack.length - 1];
   }
 });
-
