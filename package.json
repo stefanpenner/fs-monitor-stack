@@ -3,6 +3,9 @@
   "version": "1.1.0",
   "description": "a stack based FS monitor",
   "main": "index.js",
+  "files": [
+    "index.js"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
